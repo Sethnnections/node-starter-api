@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const ApiError = require('../utils/apiError');
 const logger = require('../utils/logger');
 const { redisClient } = require('../config/redis.config');
+const TokenService = require('../services/token.service');
+
+
 
 const protect = async (req, res, next) => {
   try {
@@ -25,7 +28,7 @@ const protect = async (req, res, next) => {
       throw new ApiError.unauthorized('Token revoked');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = TokenService.verifyToken(token);
 
     // Check if user still exists
     const currentUser = await User.findById(decoded.id);
@@ -55,22 +58,15 @@ const logout = async (req, res, next) => {
   try {
     const token = req.cookies.accessToken || req.headers.authorization?.split(' ')[1];
     if (token) {
-      // Add token to blacklist with expiration matching JWT expiration
-      const decoded = jwt.decode(token);
-      const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
-      
-      await redisClient.set(`bl_${token}`, 'logged_out', {
-        EX: expiresIn > 0 ? expiresIn : 60 // Fallback to 1 minute if expiration is invalid
-      });
-
-      // Clear cookie
+      await TokenService.blacklistToken(token);
       res.clearCookie('accessToken');
     }
     next();
   } catch (error) {
-    next(error);
+    next(error);1
   }
 };
+
 
 module.exports = {
   protect,

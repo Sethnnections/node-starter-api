@@ -1,5 +1,17 @@
 const crypto = require('crypto');
-const ApiError = require('./apiError');
+const ApiError = require('./apiError');const ejs = require('ejs');
+const path = require('path');
+const fs = require('fs/promises');
+
+async function compileTemplate(templateName, data) {
+  try {
+    const templatePath = path.join(__dirname, `../views/emails/${templateName}.ejs`);
+    const template = await fs.readFile(templatePath, 'utf-8');
+    return ejs.render(template, data);
+  } catch (error) {
+    throw new Error(`Template rendering failed: ${error.message}`);
+  }
+}
 
 const generateRandomString = (length = 32) => {
   return crypto.randomBytes(length).toString('hex');
@@ -29,5 +41,6 @@ module.exports = {
   generateRandomString,
   filterObject,
   validateEmail,
-  paginate
+  paginate,
+  compileTemplate
 };

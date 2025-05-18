@@ -47,9 +47,21 @@ const delCache = async (key) => {
   }
 };
 
+
+redisClient.on('error', (err) => {
+  logger.error(`Redis error: ${err.message}`);
+});
+
+const connectRedis = (session) => {
+  return require('connect-redis')(session);
+};
+
+
 module.exports = {
-  redisClient,
+  redisClient, 
+  connectRedis,
   setCache,
   getCache,
   delCache
 };
+
